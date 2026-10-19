@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Генератор акта фотографирования</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--mut:#667;--ac:#1e5fd6;--bd:#d7dbe2;--paper:#fff;--ptx:#000;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171b;--card:#1f2228;--tx:#e8eaee;--mut:#9aa;--ac:#6ea0ff;--bd:#343842;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15171b;--card:#1f2228;--tx:#e8eaee;--mut:#9aa;--ac:#6ea0ff;--bd:#343842;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,380px) minmax(0,1fr)}
+@media(max-width:860px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+h1{font-size:19px;margin:0 0 4px}h2{font-size:14px;margin:14px 0 6px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 2px}
+input,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:60px;resize:vertical}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+button{padding:10px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button:disabled{opacity:.5;cursor:default}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#drop{border:2px dashed var(--bd);border-radius:10px;padding:18px;text-align:center;color:var(--mut);cursor:pointer}
+#thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+#thumbs img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)}
+#st{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
+.scroll{overflow-x:auto}
+.paper{background:var(--paper);color:var(--ptx);width:210mm;max-width:none;padding:18mm 15mm;margin:0 auto 14px;font:14px/1.5 "Times New Roman",serif;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+.paper h3{text-align:center;font-size:16px;margin:0 0 12px}
+.paper p{margin:6px 0;text-indent:2em;text-align:justify}
+.paper .u{border-bottom:1px solid #000;padding:0 3px;min-width:30px;display:inline-block}
+.paper .sg{display:flex;justify-content:space-between;margin:14px 0 0}
+.paper .sg i{font-size:12px}
+.paper img{width:100%;display:block;margin-bottom:6px}
+.pg{page-break-after:always}
+@media print{body{background:#fff}.wrap{display:block;padding:0}.card{display:none}.paper{box-shadow:none;margin:0;width:auto}#out{display:block}.noprint{display:none}}
+a.back{font-size:13px;color:var(--ac)}</style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+<div class="card noprint">
+  <a class="back" href="./">← Все акты</a><h1>Акт фотографирования</h1>
+  <div style="color:var(--mut);font-size:13px">Бесплатно и без лимитов: распознавание идёт на вашем устройстве, фото никуда не отправляются.</div>
+  <h2>1. Фото</h2>
+  <div id="drop">Нажмите, чтобы выбрать фото<br><small>можно несколько</small></div>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+  <div id="thumbs"></div>
+  <div class="btns"><button id="go" disabled>Распознать фото</button></div>
+  <div id="st"></div><details style="margin-top:6px"><summary style="font-size:13px;color:var(--mut)">Распознанный текст (скопируйте нужное)</summary><textarea id="raw" readonly style="min-height:90px"></textarea></details>
+  <h2>2. Данные (можно править)</h2>
+  <div class="row"><div><label>Дата</label><input id="date" placeholder="06.10.2026"></div><div><label>Время</label><input id="time" placeholder="10:13"></div></div>
+  <label>Улица</label><input id="street" placeholder="ул. Геологов">
+  <div class="row"><div><label>Дом</label><input id="house" placeholder="53"></div><div><label>Объект («на …»)</label><input id="obj" value="мусорном контейнере"></div></div>
+  <label>Текст объявления</label><textarea id="text"></textarea>
+  <label>Телефон (для акта верификации)</label><input id="phone">
+  <label>Номер используется для</label><textarea id="purpose" placeholder="Заполняется после звонка"></textarea>
+  <h2>3. Участники</h2>
+  <label>Член комиссии</label><input id="mem" value="Мухаметьярова Л.А.">
+  <label>Присутствующий 1 (ФИО)</label><input id="w1" placeholder="">
+  <label>Адрес 1</label><input id="a1" placeholder="">
+  <label>Присутствующий 2 (ФИО)</label><input id="w2" placeholder="">
+  <label>Адрес 2</label><input id="a2" placeholder="">
+  <div class="btns"><button id="dl" class="sec">Скачать .doc</button><button id="pr">Печать / PDF</button></div>
+</div>
+<div class="scroll" id="out"></div>
+</div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var M=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+var photos=[],ids=["date","time","street","house","obj","text","phone","purpose","mem","w1","a1","w2","a2"];
+var SK="akt_v1";
+function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function v(i){return $(i).value.trim()}
+try{var sv=JSON.parse(localStorage.getItem(SK)||"{}");["mem","w1","a1","w2","a2","street","house","obj"].forEach(function(k){if(sv[k])$(k).value=sv[k]})}catch(e){}
+function save(){try{var o={};["mem","w1","a1","w2","a2","street","house","obj"].forEach(function(k){o[k]=v(k)});localStorage.setItem(SK,JSON.stringify(o))}catch(e){}}
+function u(s,w){return '<span class="u" style="min-width:'+(w||40)+'px">'+esc(s)+'</span>'}
+function parts(){
+  var d=v("date").match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/),t=v("time").match(/(\d{1,2}):(\d{2})/);
+  return{dd:d?("0"+d[1]).slice(-2):"",mon:d?M[+d[2]-1]||"":"",yy:d?d[3]:"2026",hh:t?t[1]:"",mm:t?t[2]:""};
+}
+function render(){
+  var p=parts(),addr="РБ, г. Уфа, "+(v("street")||"")+(v("house")?", д. "+v("house"):"");
+  var sig='<div class="sg"><span>1. ____________ <i>(подпись)</i></span><span>____________ <i>(расшифровка подписи)</i></span></div><div class="sg"><span>2. ____________ <i>(подпись)</i></span><span>____________ <i>(расшифровка подписи)</i></span></div>';
+  var memb='Член Административной комиссии при Администрации Ленинского района ГО г. Уфа РБ';
+  var h='<div class="paper pg"><h3>АКТ ФОТОГРАФИРОВАНИЯ</h3>'+
+  '<div style="display:flex;justify-content:space-between"><span>г. Уфа</span><span>в '+u(p.hh,30)+' ч. '+u(p.mm,30)+' м. «'+u(p.dd,25)+'» '+u(p.mon,90)+' '+esc(p.yy)+' г.</span></div>'+
+  '<p>Мною, членом Административной комиссии при Администрации Ленинского района ГО г. Уфа, '+esc(v("mem"))+' в присутствии:</p>'+
+  '<div>1. ФИО '+u(v("w1"),120)+'<br>Адрес: '+u(v("a1"),200)+'<br>2. ФИО '+u(v("w2"),120)+'<br>Адрес: '+u(v("a2"),200)+'</div>'+
+  '<p>Произведена фотосъемка на мобильный телефон Айфон 11 и составлен настоящий акт фотографирования о том, что «'+u(p.dd,25)+'» '+u(p.mon,80)+' '+esc(p.yy)+' г. в '+u(p.hh,30)+' часов '+u(p.mm,30)+' минут по адресу: '+u(addr,250)+' на '+u(v("obj"),150)+' зафиксирован факт самовольно размещенной информации с текстом: '+u(v("text"),300)+'</p>'+
+  '<p>Фотосъемку производил член административной комиссии при Администрации Ленинского района ГО г. Уфа, '+esc(v("mem"))+'</p>'+
+  '<p>Приложение: фотографии на '+u(photos.length?"1":"",25)+' л.</p>'+
+  '<div class="sg"><span>'+memb+'</span><span>'+esc(v("mem"))+'</span></div><p style="text-indent:0">Подписи:</p>'+sig+
+  '<h3 style="margin-top:26px">АКТ ВЕРИФИКАЦИИ</h3>'+
+  '<div style="display:flex;justify-content:space-between"><span>«'+u(p.dd,25)+'» '+u(p.mon,90)+' '+esc(p.yy)+' г.</span><span>г. Уфа</span></div>'+
+  '<p>Мной, членом административной комиссии Ленинского района городского округа город Уфа Республики Башкортостан, '+esc(v("mem"))+' осуществлен звонок на телефонный номер '+u(v("phone"),160)+' указанный(-е) в самовольно размещенной информации.</p>'+
+  '<p>В ходе состоявшегося телефонного разговора с абонентом указанного телефонного номера было установлено, что данный телефонный номер используется для '+u(v("purpose"),300)+'</p>'+
+  '<div class="sg"><span>Член административной комиссии Ленинского района городского округа город Уфа Республики Башкортостан</span><span>'+esc(v("mem"))+'</span></div><p style="text-indent:0">Подписи:</p>'+sig+'</div>';
+  h+='<div class="paper"><div>'+photos.map(function(x){return '<img src="'+x.url+'">'}).join("")+'</div>'+
+  '<p style="text-indent:0">Фотография произведена фотокамерой '+u("Айфон 11",150)+' «'+u(p.dd,25)+'» '+u(p.mon,90)+' '+esc(p.yy)+' г. в '+u(p.hh,30)+' часов '+u(p.mm,30)+' минут по адресу: г. Уфа, '+u((v("street")||"")+(v("house")?", д. "+v("house"):""),220)+'</p>'+
+  '<p style="text-indent:0">Фото таблицу составил: член административной комиссии при Администрации Ленинского района ГО г. Уфа &nbsp; <b>'+esc(v("mem"))+'</b></p><p style="text-indent:0">Подписи:</p>'+sig+'</div>';
+  $("out").innerHTML=h;
+}
+ids.forEach(function(i){$(i).addEventListener("input",function(){save();render()})});
+$("drop").onclick=function(){$("file").click()};
+function shrink(f){return new Promise(function(res){
+  var img=new Image(),r=new FileReader();
+  r.onload=function(){img.onload=function(){var s=Math.min(1,1400/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=img.width*s;c.height=img.height*s;c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    c.toBlob(function(b){res({blob:b,url:c.toDataURL("image/jpeg",.8)})},"image/jpeg",.85)};img.src=r.result};
+  r.readAsDataURL(f)})}
+$("file").onchange=function(e){
+  var fs=[].slice.call(e.target.files);$("st").textContent="Загрузка…";
+  Promise.all(fs.map(shrink)).then(function(a){photos=photos.concat(a);
+    $("thumbs").innerHTML=photos.map(function(x){return '<img src="'+x.url+'">'}).join("");
+    $("go").disabled=!photos.length;$("st").textContent=photos.length+" фото загружено";render()});
+};
+
+function canv(img,crop,scale){var c=document.createElement("canvas"),sh=crop?img.height*.14:img.height;c.width=img.width*scale;c.height=sh*scale;var x=c.getContext("2d");x.filter="grayscale(1) contrast(1.6)";x.drawImage(img,0,0,img.width,sh,0,0,c.width,c.height);return c}
+function load(url){return new Promise(function(r){var i=new Image();i.onload=function(){r(i)};i.src=url})}
+var MON={"янв":1,"фев":2,"мар":3,"апр":4,"ма":5,"июн":6,"июл":7,"авг":8,"сен":9,"окт":10,"ноя":11,"дек":12};
+function parseStamp(t){var m=t.match(/(\d{1,2})\s*(янв|фев|мар|апр|ма[йя]|июн|июл|авг|сен|окт|ноя|дек)[а-я.,]*\s*(\d{4})[^\d]{0,8}(\d{1,2})[:.](\d{2})/i);if(!m)return null;
+  var k=m[2].toLowerCase().slice(0,3);if(k.indexOf("ма")===0)k="ма";var mo=MON[k];if(!mo)return null;
+  return{date:("0"+m[1]).slice(-2)+"."+("0"+mo).slice(-2)+"."+m[3],time:("0"+m[4]).slice(-2)+":"+m[5]}}
+function phones(t){var out=[],re=/(?:\+7|8|7)[\s\-().]*(9\d{2})[\s\-().]*(\d{3})[\s\-.]*(\d{2})[\s\-.]*(\d{2})/g,m;
+  while((m=re.exec(t))){var n="8-"+m[1]+"-"+m[2]+"-"+m[3]+"-"+m[4];if(out.indexOf(n)<0)out.push(n)}return out}
+$("go").onclick=async function(){
+  var st=$("st"),btn=$("go");btn.disabled=true;
+  try{
+    if(!window.Tesseract)throw new Error("библиотека распознавания не загрузилась — проверьте интернет");
+    st.textContent="Подготовка (при первом запуске скачивается словарь ~10 МБ)…";
+    var w=await Tesseract.createWorker("rus+eng"),best=null,ph=[],raw=[];
+    for(var i=0;i<photos.length;i++){
+      st.textContent="Распознаю фото "+(i+1)+" из "+photos.length+"…";
+      var img=await load(photos[i].url),r1=await w.recognize(canv(img,true,2.5)),s1=parseStamp(r1.data.text);
+      var r2=await w.recognize(canv(img,false,1.5));
+      if(!s1)s1=parseStamp(r2.data.text);
+      if(s1&&(!best||(s1.date+s1.time)<(best.date+best.time)))best=s1;
+      phones(r2.data.text).forEach(function(n){if(ph.indexOf(n)<0)ph.push(n)});
+      raw.push(r2.data.text.split("\n").filter(function(l){return (l.match(/[А-Яа-яA-Za-z0-9]/g)||[]).length>=5}).join("\n"));
+    }
+    await w.terminate();
+    $("raw").value=raw.join("\n---\n");
+    if(best){$("date").value=best.date;$("time").value=best.time}
+    if(ph.length){$("phone").value=ph.join(", ");if(!v("text"))$("text").value=ph.join(", ")}
+    st.textContent=(best?"Дата и время найдены. ":"Штамп даты не распознан — введите вручную. ")+(ph.length?"Телефонов найдено: "+ph.length+". ":"Телефон не найден. ")+"Текст объявления впишите по образцу из раздела «Распознанный текст». Проверьте цифры!";
+    render();
+  }catch(e){st.textContent="Не удалось распознать ("+(e.message||"ошибка")+"). Заполните поля вручную."}
+  btn.disabled=false;
+};
+$("pr").onclick=function(){window.print()};
+$("dl").onclick=function(){
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman";font-size:14pt}.u{border-bottom:1px solid #000}img{width:16cm}.sg{margin-top:10pt}</style></head><body>'+$("out").innerHTML.replace(/class="paper[^"]*"/g,"")+'</body></html>';
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+html],{type:"application/msword"}));a.download="akt_fotografirovaniya.doc";document.body.appendChild(a);a.click();a.remove();
+};
+render();
+})();
+</script>
+</body>
+</html>

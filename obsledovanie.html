@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Акт обследования территории</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--mut:#667;--ac:#1e5fd6;--bd:#d7dbe2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171b;--card:#1f2228;--tx:#e8eaee;--mut:#9aa;--ac:#6ea0ff;--bd:#343842;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15171b;--card:#1f2228;--tx:#e8eaee;--mut:#9aa;--ac:#6ea0ff;--bd:#343842;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:minmax(0,380px) minmax(0,1fr)}
+@media(max-width:860px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+h1{font-size:19px;margin:0 0 4px}h2{font-size:14px;margin:14px 0 6px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 2px}
+input,textarea,select{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+select{margin-bottom:4px}textarea{min-height:60px;resize:vertical}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+button{padding:10px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button:disabled{opacity:.5;cursor:default}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#drop{border:2px dashed var(--bd);border-radius:10px;padding:18px;text-align:center;color:var(--mut);cursor:pointer}
+#thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+#thumbs img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)}
+#st{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
+.scroll{overflow-x:auto}
+.paper{background:#fff;color:#000;width:210mm;padding:18mm 15mm;margin:0 auto 14px;font:14px/1.55 "Times New Roman",serif;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+.paper h3{text-align:center;font-size:16px;margin:0}
+.paper p{margin:6px 0;text-indent:2em;text-align:justify}
+.paper .u{border-bottom:1px solid #000;padding:0 3px;display:inline-block;min-width:30px}
+.paper .sg{display:flex;justify-content:space-between;margin:12px 0 0;gap:12px}
+.paper .r{margin-left:45%;text-align:right}
+.ph{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.ph img{width:100%;max-height:120mm;object-fit:contain;display:block}
+.pg{page-break-after:always}
+@media print{body{background:#fff}.wrap{display:block;padding:0}.card{display:none}.paper{box-shadow:none;margin:0;width:auto}}
+a.back{font-size:13px;color:var(--ac)}</style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+  <a class="back" href="./">← Все акты</a><h1>Акт обследования территории</h1>
+  <div style="color:var(--mut);font-size:13px">Бесплатно и без лимитов: распознавание идёт на вашем устройстве. Фото никуда не отправляются.</div>
+  <h2>1. Фото</h2>
+  <div id="drop">Нажмите, чтобы выбрать фото<br><small>можно несколько</small></div>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+  <div id="thumbs"></div>
+  <div class="btns"><button id="go" disabled>Распознать фото</button></div>
+  <div id="st"></div>
+  <h2>2. Данные (можно править)</h2>
+  <div class="row"><div><label>Дата</label><input id="date" placeholder="07.10.2026"></div><div><label>Время</label><input id="time" placeholder="08:10"></div></div>
+  <label>Адрес (улица, дом)</label><input id="addr" placeholder="ул. Менделеева, д. 10">
+  <label>Что обнаружено (место и состояние)</label><select id="tf"></select><textarea id="found"></textarea>
+  <label>Чем нарушены (какие требования)</label><select id="tv"></select><textarea id="viol"></textarea>
+  <div class="row"><div><label>Часть</label><input id="part"></div><div><label>Статья</label><input id="art"></div></div>
+  <div style="font-size:12px;color:var(--mut);margin-top:4px">Часть и статью закона №413-з укажите сами — приложение их не подбирает.</div>
+  <label>Фотоаппарат</label><input id="cam" value="LG X-Power">
+  <h2>3. Участники</h2>
+  <label>Член комиссии</label><input id="mem" value="Абдрафикова Э.Р.">
+  <label>Присутствующий 1 (ФИО)</label><input id="w1">
+  <label>Адрес 1</label><input id="a1">
+  <label>Присутствующий 2 (ФИО)</label><input id="w2">
+  <label>Адрес 2</label><input id="a2">
+  <div class="btns"><button id="dl" class="sec">Скачать .doc</button><button id="pr">Печать / PDF</button></div>
+</div>
+<div class="scroll" id="out"></div>
+</div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var M=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+var photos=[],ids=["date","time","addr","found","viol","part","art","cam","mem","w1","a1","w2","a2"],keep=["mem","w1","a1","w2","a2","cam"],SK="akt_obs_v1";
+function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function v(i){return $(i).value.trim()}
+try{var sv=JSON.parse(localStorage.getItem(SK)||"{}");keep.forEach(function(k){if(sv[k])$(k).value=sv[k]})}catch(e){}
+function save(){try{var o={};keep.forEach(function(k){o[k]=v(k)});localStorage.setItem(SK,JSON.stringify(o))}catch(e){}}
+function u(s,w){return '<span class="u" style="min-width:'+(w||40)+'px">'+esc(s)+'</span>'}
+function parts(){var d=v("date").match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/),t=v("time").match(/(\d{1,2}):(\d{2})/);
+  return{dd:d?("0"+d[1]).slice(-2):"",mon:d?M[+d[2]-1]||"":"",yy:d?d[3]:"2026",hh:t?("0"+t[1]).slice(-2):"",mm:t?t[2]:""}}
+function render(){
+  var p=parts(),sg='<div class="sg"><span>1. ____________</span><span>____________</span></div><div class="sg"><span>2. ____________</span><span>____________</span></div>';
+  var h='<div class="paper pg"><h3>АКТ</h3><h3 style="font-weight:normal;font-size:14px;margin-bottom:14px">обследования территории на предмет соблюдения правил благоустройства</h3>'+
+  '<div style="display:flex;justify-content:space-between"><span>г. Уфа</span><span>«'+u(p.dd,25)+'» '+u(p.mon,90)+' '+esc(p.yy)+' г.</span></div>'+
+  '<p>Мною, '+u(v("mem"),150)+' членом административной комиссии при Администрации Ленинского района городского округа город Уфа Республики Башкортостан, в присутствии:</p>'+
+  '<div>1. '+u(v("w1"),420)+'<br>проживающего(ей) по адресу: '+u(v("a1"),300)+'<br>2. '+u(v("w2"),420)+'<br>проживающего(ей) по адресу: '+u(v("a2"),300)+'</div>'+
+  '<p style="text-indent:0">составлен настоящий акт обследования территории о том, что «'+u(p.dd,25)+'» '+u(p.mon,80)+' '+esc(p.yy)+' г. в '+u(p.hh,30)+' час. '+u(p.mm,30)+' мин., по адресу: г. Уфа, '+u((v("addr")?v("addr")+". ":"")+v("found"),480)+'</p>'+
+  '<p style="text-indent:0">чем нарушены '+u(v("viol"),420)+'</p>'+
+  '<p style="text-indent:0">правил благоустройства ГО г. Уфа РБ № 62/4 от 23.06.2020 г.,</p>'+
+  '<p style="text-indent:0">тем самым, совершено административное правонарушение, ответственность за которое предусмотрена частью '+u(v("part"),50)+' статьей '+u(v("art"),60)+' Закона Республики Башкортостан об административных правонарушениях № 413-з от 23.06.2011 г.</p>'+
+  '<div class="sg" style="margin-top:22px"><span>Член административной комиссии<br>при Администрации Ленинского района<br>городского округа город Уфа</span><span>____________ / '+esc(v("mem"))+'</span></div><div style="margin-top:14px">'+sg+'</div></div>';
+  h+='<div class="paper"><div class="r">Приложение к акту об обнаружении недостатков, содержащих признаки административного правонарушения от «'+esc(p.dd)+'» '+esc(p.mon)+' '+esc(p.yy)+' г. '+esc(p.hh)+':'+esc(p.mm)+' час.<br>Использован цифровой фотоаппарат: '+esc(v("cam"))+'</div>'+
+  '<p style="text-indent:0;margin-top:16px">Место обнаружения недостатков, расположено по адресу г. Уфа, '+(v("addr")?esc(v("addr")):'Ул.')+'</p>'+
+  '<div class="ph">'+photos.map(function(x){return '<img src="'+x.url+'">'}).join("")+'</div>'+
+  '<p style="text-indent:0;margin-top:20px">Фото таблицу составил член административной комиссии при администрации Ленинского района ГО г. Уфа РБ &nbsp;&nbsp; /<u>'+esc(v("mem"))+'</u></p></div>';
+  $("out").innerHTML=h;
+}
+ids.forEach(function(i){$(i).addEventListener("input",function(){save();render()})});
+$("drop").onclick=function(){$("file").click()};
+function shrink(f){return new Promise(function(res){var img=new Image(),r=new FileReader();
+  r.onload=function(){img.onload=function(){var s=Math.min(1,1400/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=img.width*s;c.height=img.height*s;c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    c.toBlob(function(b){res({blob:b,url:c.toDataURL("image/jpeg",.8)})},"image/jpeg",.85)};img.src=r.result};r.readAsDataURL(f)})}
+$("file").onchange=function(e){var fs=[].slice.call(e.target.files);$("st").textContent="Загрузка…";
+  Promise.all(fs.map(shrink)).then(function(a){photos=photos.concat(a);
+    $("thumbs").innerHTML=photos.map(function(x){return '<img src="'+x.url+'">'}).join("");
+    $("go").disabled=!photos.length;$("st").textContent=photos.length+" фото загружено";render()})};
+
+var TF=[["— готовые формулировки —",""],
+["Мусор/несанкционированная свалка","на территории обнаружено скопление бытового мусора вне специально отведённых мест"],
+["Переполненная контейнерная площадка","на контейнерной площадке обнаружены переполненные контейнеры и мусор вокруг них"],
+["Самовольно размещённые объявления","на контейнере/ограждении обнаружены самовольно размещённые объявления"],
+["Надписи, граффити","на фасаде/ограждении обнаружены надписи и рисунки (граффити)"],
+["Поврежденное ограждение/конструкция","обнаружено повреждение ограждения (конструкции), требующее ремонта"],
+["Неубранная территория","территория не очищена от мусора и посторонних предметов"]];
+var TV=[["— готовые формулировки —",""],
+["Не обеспечена уборка территории","не обеспечена своевременная уборка территории и вывоз отходов"],
+["Не обеспечено содержание контейнерной площадки","не обеспечено надлежащее содержание контейнерной площадки"],
+["Размещение объявлений вне установленных мест","информация размещена вне установленных мест"],
+["Не обеспечено содержание фасадов/ограждений","не обеспечено надлежащее состояние фасадов и ограждений"]];
+function fill(sel,arr){$(sel).innerHTML=arr.map(function(x,i){return '<option value="'+i+'">'+x[0]+'</option>'}).join("")}
+fill("tf",TF);fill("tv",TV);
+$("tf").onchange=function(){var t=TF[this.value][1];if(t){$("found").value=t;render()}};
+$("tv").onchange=function(){var t=TV[this.value][1];if(t){$("viol").value=t;render()}};
+
+var MON={"янв":1,"фев":2,"мар":3,"апр":4,"ма":5,"июн":6,"июл":7,"авг":8,"сен":9,"окт":10,"ноя":11,"дек":12};
+function canv(img,crop,scale){var c=document.createElement("canvas"),sh=crop?img.height*.14:img.height;c.width=img.width*scale;c.height=sh*scale;
+  var x=c.getContext("2d");x.filter="grayscale(1) contrast(1.6)";x.drawImage(img,0,0,img.width,sh,0,0,c.width,c.height);return c}
+function load(url){return new Promise(function(r){var i=new Image();i.onload=function(){r(i)};i.src=url})}
+function parseStamp(t){
+  var m=t.replace(/[Oо]/g,function(c){return c}).match(/(\d{1,2})\s*(янв|фев|мар|апр|ма[йя]|июн|июл|авг|сен|окт|ноя|дек)[а-я.,]*\s*(\d{4})[^\d]{0,8}(\d{1,2})[:.](\d{2})/i);
+  if(!m)return null;var k=m[2].toLowerCase().slice(0,3);if(k.indexOf("ма")===0)k="ма";
+  var mo=MON[k];if(!mo)return null;return{date:("0"+m[1]).slice(-2)+"."+("0"+mo).slice(-2)+"."+m[3],time:("0"+m[4]).slice(-2)+":"+m[5]}}
+$("go").onclick=async function(){
+  var st=$("st"),btn=$("go");btn.disabled=true;
+  try{
+    if(!window.Tesseract)throw new Error("библиотека распознавания не загрузилась — проверьте интернет");
+    st.textContent="Подготовка (при первом запуске скачивается словарь ~10 МБ)…";
+    var w=await Tesseract.createWorker("rus+eng");
+    var best=null,addr="";
+    for(var i=0;i<photos.length;i++){
+      st.textContent="Распознаю фото "+(i+1)+" из "+photos.length+"…";
+      var img=await load(photos[i].url);
+      var r1=await w.recognize(canv(img,true,2.5));
+      var s1=parseStamp(r1.data.text);
+      if(!s1){var r2=await w.recognize(canv(img,false,1));s1=parseStamp(r2.data.text)}
+      if(s1&&(!best||(s1.date+s1.time)<(best.date+best.time)))best=s1;
+    }
+    await w.terminate();
+    if(best){$("date").value=best.date;$("time").value=best.time;st.textContent="Готово: дата и время найдены. Выберите формулировки, укажите адрес и часть/статью закона."}
+    else st.textContent="Штамп даты не распознан — введите дату и время вручную, выберите формулировки."
+    render();
+  }catch(e){st.textContent="Не удалось распознать ("+(e.message||"ошибка")+"). Заполните поля вручную."}
+  btn.disabled=false;
+};
+$("pr").onclick=function(){window.print()};
+$("dl").onclick=function(){
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman";font-size:14pt}.u{border-bottom:1px solid #000}img{width:8cm}.sg{margin-top:10pt}</style></head><body>'+$("out").innerHTML.replace(/class="paper[^"]*"/g,"")+'</body></html>';
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+html],{type:"application/msword"}));a.download="akt_obsledovaniya.doc";document.body.appendChild(a);a.click();a.remove();
+};
+render();
+})();
+</script>
+</body>
+</html>
